@@ -17,7 +17,7 @@ import (
 	"github.com/noobaa/noobaa-operator/v5/version"
 
 	"github.com/blang/semver/v4"
-	nbapi "github.com/kube-object-storage/lib-bucket-provisioner/pkg/provisioner/api"
+	lbpapi "github.com/kube-object-storage/lib-bucket-provisioner/pkg/provisioner/api"
 	operv1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/spf13/cobra"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
@@ -193,7 +193,7 @@ func RunCatalog(cmd *cobra.Command, args []string) {
 	}
 	util.Panic(util.WriteYamlFile(csvFileName, GenerateCSV(opConf, csvParams)))
 	crd.ForEachCRD(func(c *crd.CRD) {
-		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == nbapi.Domain {
+		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == lbpapi.Domain {
 			util.Panic(util.WriteYamlFile(versionDir+c.Name+".crd.yaml", c))
 		}
 	})
@@ -668,7 +668,7 @@ func GenerateCSV(opConf *operator.Conf, csvParams *generateCSVParams) *operv1.Cl
 				operv1.APIResourceReference{Name: "statefulsets.apps", Kind: "StatefulSet", Version: "v1"},
 			},
 		}
-		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == nbapi.Domain {
+		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == lbpapi.Domain {
 			csv.Spec.CustomResourceDefinitions.Owned = append(csv.Spec.CustomResourceDefinitions.Owned, crdDesc)
 		} else {
 			csv.Spec.CustomResourceDefinitions.Required = append(csv.Spec.CustomResourceDefinitions.Required, crdDesc)
