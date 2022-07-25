@@ -9,6 +9,7 @@ fi
 ./build/_output/bin/noobaa-operator-local olm catalog -n openshift-storage \
 --dir ${MANIFESTS} \
 --odf \
+--own-bucket-provisioner-crds=${OWN_BUCKET_CRDS:-false} \
 --csv-name ${CSV_NAME} \
 --skip-range "${SKIP_RANGE}" \
 --replaces "${REPLACES}" \

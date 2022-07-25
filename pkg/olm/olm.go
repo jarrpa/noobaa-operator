@@ -34,9 +34,10 @@ type unObj = map[string]interface{}
 type unArr = []interface{}
 
 type generateCSVParams struct {
-	IsForODF  bool
-	SkipRange string
-	Replaces  string
+	IsForODF       bool
+	OwnsBucketCRDs bool
+	SkipRange      string
+	Replaces       string
 }
 
 // Cmd returns a CLI command
@@ -67,6 +68,7 @@ func CmdCatalog() *cobra.Command {
 	}
 	cmd.Flags().String("dir", "./build/_output/olm", "The output dir for the OLM package")
 	cmd.Flags().Bool("odf", false, "Build package according to ODF requirements")
+	cmd.Flags().Bool("own-bucket-provisioner-crds", false, "Own lib-bucket-provisioner CRDs")
 	cmd.Flags().String("csv-name", "", "File name for the CSV YAML")
 	cmd.Flags().String("skip-range", "", "set the olm.skipRange annotation in the CSV")
 	cmd.Flags().String("replaces", "", "set the replaces property in the CSV")
@@ -157,12 +159,14 @@ func RunCatalog(cmd *cobra.Command, args []string) {
 	var versionDir string
 
 	forODF, _ := cmd.Flags().GetBool("odf")
+	ownCRDs, _ := cmd.Flags().GetBool("own-bucket-provisioner-crds")
 	skipRange, _ := cmd.Flags().GetString("skip-range")
 	replaces, _ := cmd.Flags().GetString("replaces")
 	csvParams := &generateCSVParams{
-		IsForODF:  forODF,
-		SkipRange: skipRange,
-		Replaces:  replaces,
+		IsForODF:       forODF,
+		OwnsBucketCRDs: ownCRDs,
+		SkipRange:      skipRange,
+		Replaces:       replaces,
 	}
 	if forODF {
 		versionDir = dir
@@ -193,7 +197,7 @@ func RunCatalog(cmd *cobra.Command, args []string) {
 	}
 	util.Panic(util.WriteYamlFile(csvFileName, GenerateCSV(opConf, csvParams)))
 	crd.ForEachCRD(func(c *crd.CRD) {
-		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == lbpapi.Domain {
+		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || (csvParams.OwnsBucketCRDs && c.Spec.Group == lbpapi.Domain) {
 			util.Panic(util.WriteYamlFile(versionDir+c.Name+".crd.yaml", c))
 		}
 	})
@@ -668,7 +672,7 @@ func GenerateCSV(opConf *operator.Conf, csvParams *generateCSVParams) *operv1.Cl
 				operv1.APIResourceReference{Name: "statefulsets.apps", Kind: "StatefulSet", Version: "v1"},
 			},
 		}
-		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || c.Spec.Group == lbpapi.Domain {
+		if c.Spec.Group == nbv1.SchemeGroupVersion.Group || (csvParams.OwnsBucketCRDs && c.Spec.Group == lbpapi.Domain) {
 			csv.Spec.CustomResourceDefinitions.Owned = append(csv.Spec.CustomResourceDefinitions.Owned, crdDesc)
 		} else {
 			csv.Spec.CustomResourceDefinitions.Required = append(csv.Spec.CustomResourceDefinitions.Required, crdDesc)
